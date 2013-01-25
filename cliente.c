@@ -3,14 +3,15 @@
 int main(int argc, char **argv) {
   int tiempo = 8*60;
   int min = 100;
-  int *parametros = verOp(13,argc,argv);
+  int *parametros = verOp(11,argc,argv);
   char nom[64];
   strcpy(nom,argv[parametros[0]]);
   int cap = atoi(argv[parametros[1]]);
   int inv = atoi(argv[parametros[2]]);
-  int tie = atoi(argv[parametros[3]]);
-  int sum = atoi(argv[parametros[4]]);
-  int pue = atoi(argv[parametros[5]]);
+  int con = atoi(argv[parametros[3]]);
+  char tmp[64];
+  strcpy(tmp,argv[parametros[4]]);
+  FILE *archivo = fopen(tmp,"r");
   while(tiempo > 0) {
   
     sleep(min);
@@ -18,4 +19,3 @@ int main(int argc, char **argv) {
   }
   return 0;
 }
-
