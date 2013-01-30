@@ -36,6 +36,10 @@ int main(int argc, char **argv) {
   int inv = atoi(argv[parametros[2]]);    // Def de Inventario de B
   int con = atoi(argv[parametros[3]]);    // Def de Consumo de B
   free(parametros);                       // Liberacion de memoria de Parametros
+  // Definicion de las variables relacionadas a la evaluacion del Archivo
+  char tmp[64];                            
+  strcpy(tmp,argv[parametros[4]]);
+  FILE *archivo = fopen(tmp,"r");
 
   // Definicion de las Variables relacionadas con la conexion
   int sockfd;
@@ -45,11 +49,6 @@ int main(int argc, char **argv) {
   char dir[64];
   int pue;
   char sim[1];
-
-  // Definicion de las variables relacionadas a la evaluacion del Archivo
-  char tmp[64];                            
-  strcpy(tmp,argv[parametros[4]]);
-  FILE *archivo = fopen(tmp,"r");
 
   // Definicion de las Variables relacionadas con el Log del Sistema
   char nombreLog[128] = "log_";
@@ -64,6 +63,11 @@ int main(int argc, char **argv) {
   fprintf(log,"Estado Inicial: %d (Inventario)\n",inv);
   printf("Estado Inicial: %d (Inventario)\n",inv);
 
+  // 
+  while (!feof(archivo)){
+    if ( fscanf(archivo,"%[^&]%[&]%[^&]%[&] %d ",nomC,sim,dir,sim,&pue) != EOF ){
+      printf("Nombre del Centro:%s  Direccion DNS: %s  Numero de Puerto: %d \n", nomC, dir, pue);
+    }
   while(tiempo < tiempoTotal) {
     printf("Tie: %d e Inv: %d\n",tiempo,inv);
     sleep(min);
