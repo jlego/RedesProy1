@@ -141,6 +141,9 @@ void *agregarElemento(lista *l, char *info, int tResp){
   l->numE = ((l->numE)+1);
 }
 
+int tamLista(lista *l) {
+  return l->numE;
+}
 /*
   Funcion: mostrarLista(lista *l)
   Entrada: 
@@ -231,18 +234,16 @@ int main(int argc, char **argv) {
   mostrarLista(l);
   agregarElemento(l,"medio",3);
   mostrarLista(l);
-  mostrarElemento(obtenerElemento(l,0));
   agregarElemento(l,"chao",6);
   mostrarLista(l);
-  mostrarElemento(obtenerElemento(l,0));
-  mostrarElemento(obtenerElemento(l,1));
   agregarElemento(l,"hola",1);
   mostrarLista(l);
-  mostrarElemento(obtenerElemento(l,0));
-  mostrarElemento(obtenerElemento(l,1));
-  mostrarElemento(obtenerElemento(l,2));
-  mostrarElemento(obtenerElemento(l,3));
-  mostrarElemento(obtenerElemento(l,4));
+  printf("Mostrar todos los elementos\n");
+  int i = 0;
+  while (i<tamLista(l)) {
+    mostrarElemento(obtenerElemento(l,i));
+    i += 1;
+  }
   limpiarLista(l);
 }
 */
