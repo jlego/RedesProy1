@@ -157,7 +157,8 @@ void mostrarLista(lista *l){
     printf("La lista esta vacia. No tiene elementos\n");
   } else {
     if (l->numE == 1) {
-      printf("La lista tiene 1 elemento. Se muestran a continuacion\n",l->numE);
+      printf("La lista tiene 1 elemento. Se muestran a continuacion\n");
+      printf("Elemento: %s(%d)\n",e->centro,e->tResp);
     } else {
       printf("La lista tiene %d elementos. Se muestran a continuacion\n",l->numE);
       while (e!=NULL) {
@@ -169,36 +170,39 @@ void mostrarLista(lista *l){
 }
 
 /*
-  Funcion: mostrarLista(lista *l)
+  Funcion: obtenerElemento(lista *l, int pos)
   Entrada: 
    * Un apuntador a lista *l: Que es la lista de la cual se desea mostrar todos
     los elementos
+   * Un int pos que es la posicion del elemento que se desea
   Salida:
-   * Ninguna
+   * *elemento: El elemento en la posicion pos
   Tarea:
    Mostrar de manera ordenada todos los elementos de la lista
 */
 elemento *obtenerElemento(lista *l, int pos){ 
-  if (pos > (l->numE)) {
+  if (pos >= (l->numE)) {
     msjError(-9);
   } else { 
     elemento *e = l->prim;
-    if (l->numE == 0) {
-      printf("La lista esta vacia. No tiene elementos\n");
-    } else {
-      if (l->numE == 1) {
-        printf("La lista tiene 1 elemento. Se muestran a continuacion\n",l->numE);
-     } else {
-        printf("La lista tiene %d elementos. Se muestran a continuacion\n",l->numE);
-        while (e!=NULL) {
-	        printf("Elemento: %s(%d)\n",e->centro,e->tResp);
-        	e = e->sig;
-        }
-      }
+    int i = 0;
+    while (i < pos) {
+      e = e->sig;
+      i += 1;
     }
+    return e;
   }
 }
 
+/*
+  Funcion:
+  Entrada:
+  Salida:
+  Tarea:
+*/
+void mostrarElemento(elemento *e) {
+  printf("Elemento:%s:%d\n",e->centro,e->tResp);
+}
 /*
   Funcion: limpiarLista(lista *l)
   Entrada: 
@@ -220,16 +224,26 @@ void limpiarLista(lista *l) {
   }
   free(l);
 }
+
 /*
 int main(int argc, char **argv) {
   lista *l = iniciarLista();
   mostrarLista(l);
   agregarElemento(l,"medio",3);
   mostrarLista(l);
+  mostrarElemento(obtenerElemento(l,0));
   agregarElemento(l,"chao",6);
   mostrarLista(l);
+  mostrarElemento(obtenerElemento(l,0));
+  mostrarElemento(obtenerElemento(l,1));
   agregarElemento(l,"hola",1);
   mostrarLista(l);
+  mostrarElemento(obtenerElemento(l,0));
+  mostrarElemento(obtenerElemento(l,1));
+  mostrarElemento(obtenerElemento(l,2));
+  mostrarElemento(obtenerElemento(l,3));
+  mostrarElemento(obtenerElemento(l,4));
   limpiarLista(l);
 }
 */
+//\n
