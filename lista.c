@@ -10,7 +10,11 @@
  * * Jose Gregorio Lezama        (07-41104)        
  *                      
  * Archivo: lista.c
- *                             
+ *   Este archivo se plantea como una herramienta para facilitar el trabajo de
+ * de las bombas, ya que se encarga de llevar una lista ordenada de todos los
+ * dentros para que la bomba pueda acceder a los de menor tiempo de respuesta
+ * de una manera rapida y eficiente
+ *
  *************************************************************/
 
 // Includes de librerias basicas
@@ -18,21 +22,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Includes de librerias de Internet
+// Includes 
 #include "headers.c"
 #define true 1
 #define false 0
 
 /*
-  Clase: lista 
+  Clase: elemento 
 
   Componentes:
    * centro: TODA la informacion del centro almacenada en una cadena de
     caracteres(Nombre, Maquina, Puerto)
-   * tiempoRespuesta: Un entero, que da el parametro de orden para la lista
+   * tResp: Un entero, que da el parametro de orden para la lista
     el requisitio es que el entero debe ser mayor que 0, se mantiene esta
     informacion por fuera porque es primordial para el orden
-    * prox: Apuntador al proximo centro
+    * sig: Apuntador al proximo centro
 
   Explicacion:
    Una lista de TODOS los centros a los que puede acceder la bomba. Esta lista 
@@ -40,120 +44,192 @@
    manera ordenada para obtener asi la respuesta optima al necesitar un elemento
 
 */
+typedef struct elemento elemento;
+
+/*
+  Clase: lista 
+
+  Componentes:
+    * numE: Un entero, que indica la cantidad de Elementos que hay en la lista
+     para asi no tener que realizar busquedas en caso de que la lista este vacia
+     o no llegue hasta algun elemento solicitado
+
+   * primero: Apuntador al centro con el mejor tiempo
+
+  Explicacion:
+   Nuestra clase lista es en realidad una cabecera de lista de Elementos, se
+   hace de esta manera para que el apuntador sea siempre el mismo. esto le da
+   una mayor legibilidad al codigo. ademas de aportar facilidades al no tener
+   que devolver el valor de la nueva direccion donde comienza la lista
+
+*/
 typedef struct lista lista;
 
-struct lista{
+struct elemento{
   char *centro;
-  int tiempoRespuesta;
-  lista *prox;
+  int tResp;
+  elemento *sig;
+};
+
+struct lista{
+  int numE;
+  elemento *prim;
 };
 
 /*
-  Funcion: inicializarLista()
+  Funcion: msjError()
   Entrada: 
-   Ninguna
+   * Ninguna
   Salida:
-   * Apuntador a Lista:
+   * Apuntador a lista, la direccion de memoria donde esta localizado la 
+    cabecera de la lista. 
   Tarea:
-   
+   Inicializar de buena manera la lista con un manejador de la llamada al 
+   sistema de malloc. llamado xmalloc
 */
-lista *inicializarLista() {
-  lista *crear = xmalloc(sizeof(lista));
-  crear->centro="";
-  crear->tiempoRespuesta=-1;
-  crear->prox = NULL;
-  return crear;
+lista *iniciarLista(){
+  lista *l = xmalloc(sizeof(lista));
+  l->numE = 0;
+  l->prim = NULL;
 }
 
-
 /*
-  Funcion: agregarLista(lista *centros, char *infoCentro, int tiempoResp)
+  Funcion: *agregarElemento(lista *l, char info, int tResp)
   Entrada: 
-   *
+   * Un apuntador a lista l: Que es el apuntador a la cabeza de la lista, a la
+    cual se le desea agregar la informacion
+   * Una cadena de caracteres info: que es la informacion del centro (servidor)
+    con el cual se establecera la conexion, es la informacion que se desea
+    guardar 
+   * Un entero tResp: que es el tiempo de respuesta del centro, ademas de esto
+    se utiliza para agregar de manera ordenada
   Salida:
-   *
+   * Ninguna
   Tarea:
-
+   Agrega de manera ordenada, de menor a mayor, un nuevo elemento a la lista 
+   que se le pasa como parametro. siendo el elemento la composicion de la info
+   y el tiempo de respuesta 
 */
-lista *agregarLista(lista *centros, char *infoCentro, int tiempoResp) {
-  lista *principio = centros;
-  lista *tmp = centros;
-  lista *papaTmp = NULL;
-  lista *nuevo = xmalloc(sizeof(lista));
-  nuevo->centro = infoCentro;
-  nuevo->tiempoRespuesta = tiempoResp;
-  int listo = false;
-  if (tmp->tiempoRespuesta == -1) {
-    principio = nuevo;
+void *agregarElemento(lista *l, char *info, int tResp){
+  elemento *e = xmalloc(sizeof(elemento));
+  e->centro = info;
+  e->tResp = tResp;
+  e->sig = NULL;
+  
+  if (l->numE == 0) {
+    l->prim = e;
   } else {
+    elemento *tmp = l->prim;
+    elemento *tmpPapa = NULL;
+    int listo = false;
     while ((tmp != NULL) && (listo != true)) {
-      if (tmp->tiempoRespuesta > nuevo->tiempoRespuesta) {
-	nuevo->prox = tmp;
-	if (papaTmp != NULL) {
-	  papaTmp->prox = nuevo;
-	} else {
-	  principio = nuevo;
+      if (tmp->tResp > tResp) {
+	e->sig = tmp;
+	if (tmpPapa == NULL) {
+	  l->prim = e;
 	}
 	listo = true;
       } else {
-	papaTmp = tmp;
-	tmp = tmp->prox;
+	tmpPapa = tmp;
+	tmp = tmp->sig;
       }
     }
     if (listo != true) {
-      papaTmp->prox=nuevo;
+      tmpPapa->sig=e;
     }
   }
-  return principio;
+  l->numE = ((l->numE)+1);
 }
 
 /*
-  Funcion: mostrarLista(lista *centros)
+  Funcion: mostrarLista(lista *l)
   Entrada: 
-   *
+   * Un apuntador a lista *l: Que es la lista de la cual se desea mostrar todos
+    los elementos
   Salida:
-   *
+   * Ninguna
   Tarea:
+   Mostrar de manera ordenada todos los elementos de la lista
 */
-void mostrarLista(lista *centros) {
-  lista *tmp = centros;
-  if (tmp->tiempoRespuesta == -1) {
-    printf("La lista no tiene elementos.\n");
+void mostrarLista(lista *l){
+  elemento *e = l->prim;
+  if (l->numE == 0) {
+    printf("La lista esta vacia. No tiene elementos\n");
   } else {
-    printf("Los elementos de la lista son los siguientes:\n");
-    while (tmp != NULL) {
-      printf("Elemento: %s y %d \n",tmp->centro,tmp->tiempoRespuesta);
-      tmp = tmp->prox;
+    if (l->numE == 1) {
+      printf("La lista tiene 1 elemento. Se muestran a continuacion\n",l->numE);
+    } else {
+      printf("La lista tiene %d elementos. Se muestran a continuacion\n",l->numE);
+      while (e!=NULL) {
+	printf("Elemento: %s(%d)\n",e->centro,e->tResp);
+	e = e->sig;
+      }
     }
   }
 }
 
 /*
-  Funcion: limpiarLista(lista *centros)
-  Entrada:
-   *
+  Funcion: mostrarLista(lista *l)
+  Entrada: 
+   * Un apuntador a lista *l: Que es la lista de la cual se desea mostrar todos
+    los elementos
   Salida:
-   *
+   * Ninguna
   Tarea:
+   Mostrar de manera ordenada todos los elementos de la lista
 */
-void limpiarLista(lista *centros) {
-  lista *tmp = centros;
-  lista *borrar;
-  while (tmp != NULL) {
-    borrar = tmp;
-    tmp = tmp->prox;
-    free(borrar);
+elemento *obtenerElemento(lista *l, int pos){ 
+  if (pos > (l->numE)) {
+    msjError(-9);
+  } else { 
+    elemento *e = l->prim;
+    if (l->numE == 0) {
+      printf("La lista esta vacia. No tiene elementos\n");
+    } else {
+      if (l->numE == 1) {
+        printf("La lista tiene 1 elemento. Se muestran a continuacion\n",l->numE);
+     } else {
+        printf("La lista tiene %d elementos. Se muestran a continuacion\n",l->numE);
+        while (e!=NULL) {
+	        printf("Elemento: %s(%d)\n",e->centro,e->tResp);
+        	e = e->sig;
+        }
+      }
+    }
   }
 }
 
-int main(int argc,char **argv) {
-  lista *nueva = inicializarLista();
-  mostrarLista(nueva);
-  nueva = agregarLista(nueva,"medio",3);
-  mostrarLista(nueva);
-  nueva = agregarLista(nueva,"hola",1);
-  mostrarLista(nueva);
-  nueva = agregarLista(nueva,"chao",6);
-  mostrarLista(nueva);
-  limpiarLista(nueva);
+/*
+  Funcion: limpiarLista(lista *l)
+  Entrada: 
+   * Un apuntador a lista *l: Que es la lista de la cual se debe limpiar de 
+    memoria
+  Salida:
+   * Ninguna
+  Tarea:
+   Limpiar la memoria, es decir liberar de memoria todas las direcciones 
+   ocupada por la lista, es decir, por la cabecera y cada uno de los elementos
+*/
+void limpiarLista(lista *l) {
+  elemento *e = l->prim;
+  elemento *ePapa = NULL;
+  while (e!=NULL) {
+    ePapa = e;
+    e = e->sig;
+    free(ePapa);
+  }
+  free(l);
 }
+/*
+int main(int argc, char **argv) {
+  lista *l = iniciarLista();
+  mostrarLista(l);
+  agregarElemento(l,"medio",3);
+  mostrarLista(l);
+  agregarElemento(l,"chao",6);
+  mostrarLista(l);
+  agregarElemento(l,"hola",1);
+  mostrarLista(l);
+  limpiarLista(l);
+}
+*/

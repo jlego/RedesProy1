@@ -25,24 +25,23 @@ void copy(int sockfd) {
       printf("Nombre del Centro:%s  Direccion DNS: %s  Numero de Puerto: %d \n", nomC, dir, pue);
     }
   
-
     /* Conectando al servidor local */
-    server = dir;
+    server = dir;                                    // Cambie el numero por la direccion que se lee del archivo
 
-    /* Get the address of the server. */
+    /* Obteniendo la direccion del Servidor */
     bzero(&serveraddr, sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_addr.s_addr = inet_addr(server);
-    serveraddr.sin_port = htons(PORT);
+    serveraddr.sin_port = htons(pue);                 // Cambie PORT por el pue que se lee en el archivo
 
-    /* Open a socket. */
+    /* Se abre un Socket */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
-      printf("can't open socket");
+      printf("Error abriendo el Socket");
 
-    /* Connect to the server. */
+    /* Conectando con el Servidor */
     if (connect(sockfd, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)
-      printf("can't connect to server");
+      printf("Error conectando al Servidor");
 
     /* Copy input to the server. */
     copy(sockfd);

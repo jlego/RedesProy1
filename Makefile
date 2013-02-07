@@ -20,7 +20,7 @@ all: bomba centro
 bomba: bomba.o funciones.c
 	$(CC) bomba.o -o bomba   
 
-bomba.o: bomba.c funciones.c
+bomba.o: bomba.c funciones.c lista.c
 	$(CC) -c bomba.c
 
 centro: centro.o funciones.c
