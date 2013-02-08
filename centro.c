@@ -23,7 +23,24 @@
  *                             
  *************************************************************/
 
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 #include "funciones.c"
+
+#ifndef true
+# define true 1
+#endif
+
+#ifndef false
+# define false 0
+#endif
 
 int main(int argc, char **argv) {
   /* Definicion de los valores recibidos por Pantalla e Importantes para el main */
@@ -39,6 +56,14 @@ int main(int argc, char **argv) {
   int sum = atoi(argv[parametros[4]]);    // Def de Suministro del C
   int pue = atoi(argv[parametros[5]]);    // Def de Puerto de comunicacion
   free(parametros);                       // Liberacion de memoria de Parametros
+  int vacio = true;
+  if (inv > 0) {
+    vacio = false;
+  }
+  int full = false;
+  if (inv == cap) {
+    full = true;
+  }
 
   /* Definicion de las Variables relacionadas con la conexion */
   int sockfd, newsockfd;
@@ -56,8 +81,8 @@ int main(int argc, char **argv) {
   printf("Se guardara la informacion en: %s\n",nombreLog);
   
   /* Estado Inicial */
-  fprintf(log,"Estado Inicial: %d (Inventario)\n",inv);
-  printf("Estado Inicial: %d (Inventario)\n",inv);
+  fprintf(log,"Inventario Inicial: %d litros\n",inv);
+  printf("Inventario Inicial: %d litros\n",inv);
 
   while (tiempo < tiempoTotal) {
     printf("Tie: %d e Inv: %d\n",tiempo,inv);
@@ -65,28 +90,28 @@ int main(int argc, char **argv) {
 
     /* Recibir Suministro */
     inv += cap;
-    if (inv > cap) {
+    if (inv >= cap) {
       inv = cap;
-    }
-
+    }    
     /* Tanque Full */
     if (inv == cap) {
-      fprintf(log,"Tanque Full: %d (Tiempo)\n",tiempo);
-      printf("Tanque Full: %d (Tiempo)\n",tiempo);  
+      if (full == false) {
+	fprintf(log,"Tanque Full: %d minutos\n",tiempo);
+	printf("Tanque Full: %d minutos\n",tiempo);
+	full = true;
+      }
     }
     
-    /* Realizar Suministro*
-
+    //Aqui va lo de la conexion
     /* Tanque Vacio */
     if (inv == 0) {
-      fprintf(log,"Tanque Vacio: %d (Tiempo)\n",tiempo);
-      printf("Tanque Vacio: %d (Tiempo)\n",tiempo);
-    } 
-    /* Realizar Solicitud */
-    if (inv < 380) {
-      fprintf(log,"Se realizo peticion: %d (Tiempo)\n",tiempo);
-      printf("Se realizio peticion: %d (Tiempo)\n",tiempo);
+      if (vacio == false) {
+	fprintf(log,"Tanque Vacio: %d minutos\n",tiempo);
+	printf("Tanque Vacio: %d minutos\n",tiempo);
+	vacio = true;
+      }
     }
+
     /* Pasa el tiempo */
     tiempo += 1;
   }

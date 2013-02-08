@@ -22,8 +22,26 @@
  *                             
  *************************************************************/
 
+
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 #include "funciones.c"
 #include "lista.c"
+
+#ifndef true
+# define true 1
+#endif
+
+#ifndef false
+# define false 0
+#endif
 
 int main(int argc, char **argv) {
   /* Definicion de los valores recibidos por Pantalla e Importantes para el main */
@@ -37,17 +55,29 @@ int main(int argc, char **argv) {
   int inv = atoi(argv[parametros[2]]);    // Def de Inventario de B
   int con = atoi(argv[parametros[3]]);    // Def de Consumo de B
   free(parametros);                       // Liberacion de memoria de Parametros
+  int espera = -1;
+  int vacio = true;
+  if (inv > 0) {
+    vacio = false;
+  }
+
   // Definicion de las variables relacionadas a la evaluacion del Archivo
   char tmp[64];                            
   strcpy(tmp,argv[parametros[4]]);
   FILE *archivo = fopen(tmp,"r");
+  lista *servidores = iniciarLista();
 
   /* Definicion de las Variables relacionadas con la conexion */
-  int sockfd;
-  struct sockaddr_in serveraddr;
-  char *server;
-  char nomC[64];
-  char dir[64];
+  struct sockaddr_in address;
+  struct in_addr inaddr;
+  struct hostent *host;
+  int sock;
+
+  char *inbuffer;
+  int tResp;
+
+  char *nomC;
+  char *dir;
   int pue;
   char sim[1];
 
@@ -61,24 +91,58 @@ int main(int argc, char **argv) {
   printf("Se guardara la informacion en: %s\n",nombreLog);
 
   /* Estado Inicial */
-  fprintf(log,"Estado Inicial: %d (Inventario)\n",inv);
-  printf("Estado Inicial: %d (Inventario)\n",inv);
-
-  /* Se lee la informacion del archivo */
+  fprintf(log,"Inventario Inicial: %d litros\n",inv);
+  printf("Inventario Inicial: %d litros\n",inv);
+  
+  /* Se lee la informacion del archivo */  
   while (!feof(archivo)){
     if ( fscanf(archivo,"%[^&]%[&]%[^&]%[&]%d ",nomC,sim,dir,sim,&pue) != EOF ){
       printf("Nombre del Centro:%s  Direccion DNS: %s  Numero de Puerto: %d \n", nomC, dir, pue);
+
+      if (inet_aton(dir, &inaddr)) {
+	host = gethostbyaddr((char *) &inaddr, sizeof(inaddr), AF_INET);
+      } else {
+	host = gethostbyname(dir);
+      }
+      if (host) {
+	sock = socket(AF_INET,SOCK_STREAM,0);
+	if (sock >= 0) {
+	  address.sin_family = AF_INET;
+	  address.sin_port = htons(pue);
+	  memcpy(&address.sin_addr, host->h_addr_list[0], sizeof(address.sin_addr));
+
+	  if (connect(sock, (struct sockaddr *)&address, sizeof(address)) >= 0) {
+	    if (write(sock,"tiempo",6) == 1) {
+	      if (read(sock, &inbuffer, 1) == 1) {
+		tResp = atoi(inbuffer);
+		agregarElemento(servidores,nomC,dir,pue,tResp);
+	      } else {
+		printf("No se logro comunicar de manera efectiva con %s, en la direccion %s y puerto %d.\nSin embargo, se continuara con la ejecucion del programa\n",nomC,dir,pue);
+	      }
+	    } else {
+	      printf("No se logro comunicar de manera efectiva con %s, en la direccion %s y puerto %d.\nSin embargo, se continuara con la ejecucion del programa\n",nomC,dir,pue);
+	    }
+	    close(sock);
+	  } else {
+	    printf("No se logro comunicar de manera efectiva con %s, en la direccion %s y puerto %d.\nSin embargo, se continuara con la ejecucion del programa\n",nomC,dir,pue);
+	  }
+	} else {
+	  printf("No se logro comunicar de manera efectiva con %s, en la direccion %s y puerto %d.\nSin embargo, se continuara con la ejecucion del programa\n",nomC,dir,pue);
+	}
+      } else {	
+	printf("No se logro comunicar de manera efectiva con %s, en la direccion %s y puerto %d.\nSin embargo, se continuara con la ejecucion del programa\n",nomC,dir,pue);
+      }
     }
   }
-  
+
   while(tiempo < tiempoTotal) {
     printf("Tie: %d e Inv: %d\n",tiempo,inv);
     sleep(min);
 
     /* Tanque Full */
     if (inv == cap) {
-      fprintf(log,"Tanque Full: %d (Tiempo)\n",tiempo);
-      printf("Tanque Full: %d (Tiempo)\n",tiempo);  
+      fprintf(log,"Tanque Full: %d minutos\n",tiempo);
+      printf("Tanque Full: %d minutos\n",tiempo);  
     }
     
     /* Realizar consumo */
@@ -90,19 +154,91 @@ int main(int argc, char **argv) {
 
     /* Realizar Solicitud */
     if (inv < 380) {
-      fprintf(log,"Se realizo peticion: %d (Tiempo)\n",tiempo);
-      printf("Se realizio peticion: %d (Tiempo)\n",tiempo);
+      // Realizar solicitud
+      if (espera == -1) {
+	int i = 0;
+	int listo = false;
+	elemento *e;
+	while ((listo != true) && (i < tamLista(servidores))) {
+	  e = obtenerElemento(servidores,i);
+	  nomC = e->nombre;
+	  dir = e->dir;
+	  pue = e->puerto;
+	  tResp = e->tResp;
+	  if (inet_aton(dir, &inaddr)) {
+	    host = gethostbyaddr((char *) &inaddr, sizeof(inaddr), AF_INET);
+	  } else {
+	    host = gethostbyname(dir);
+	  }
+	  
+	  if (host) {
+	    sock = socket(AF_INET,SOCK_STREAM,0);
+	    if (sock >= 0) {
+	      address.sin_family = AF_INET;
+	      address.sin_port = htons(pue);
+	      memcpy(&address.sin_addr, host->h_addr_list[0], sizeof(address.sin_addr));
+	      if (connect(sock, (struct sockaddr *)&address, sizeof(address)) >= 0) {
+		if (write(sock,"tiempo",6) == 1) {
+		  if (read(sock, &inbuffer, 1) == 1) {
+		    if (strcmp(inbuffer,"si") == 0){
+		      fprintf(log,"Peticion: %d minutos, %s, Ok\n",tiempo,nomC);
+		      printf("Peticion: %d minutos, %s, Ok\n",tiempo,nomC);
+		      espera = tResp;
+		      listo = true;
+		    } else {
+		      fprintf(log,"Peticion: %d minutos, %s, Sin inventario\n",tiempo,nomC);
+		      printf("Peticion: %d minutos, %s, Sin inventario\n",tiempo,nomC);
+		    }
+		  } else {
+		    fprintf(log,"Peticion: %d minutos, %s, Sin respuesta\n",tiempo,nomC);
+		    printf("Peticion: %d minutos, %s, Sin Respuesta\n",tiempo,nomC);
+		  }
+		} else {
+		  fprintf(log,"Peticion: %d minutos, %s, Sin respuesta\n",tiempo,nomC);
+		  printf("Peticion: %d minutos, %s, Sin Respuesta\n",tiempo,nomC);
+		}
+		close(sock);
+	      } else {
+		fprintf(log,"Peticion: %d minutos, %s, Sin respuesta\n",tiempo,nomC);
+		printf("Peticion: %d minutos, %s, Sin Respuesta\n",tiempo,nomC);
+	      }
+	    } else {
+	      fprintf(log,"Peticion: %d minutos, %s, Sin respuesta\n",tiempo,nomC);
+	      printf("Peticion: %d minutos, %s, Sin Respuesta\n",tiempo,nomC);
+	    }
+	  } else {
+	    fprintf(log,"Peticion: %d minutos, %s, Sin respuesta\n",tiempo,nomC);
+	    printf("Peticion: %d minutos, %s, Sin Respuesta\n",tiempo,nomC);
+	  }
+	  i += 1;
+	}
+      }
     }
 
     /* Tanque Vacio */
     if (inv == 0) {
-      fprintf(log,"Tanque Vacio: %d (Tiempo)\n",tiempo);
-      printf("Tanque Vacio: %d (Tiempo)\n",tiempo);
-    } 
+      if (vacio == false) {
+	fprintf(log,"Tanque Vacio: %d minutos\n",tiempo);
+	printf("Tanque Vacio: %d minutos\n",tiempo);
+	vacio = true;
+      }
+    }
+
+    /* Llegada de la Gandola */
+    if (espera >= 0) {
+      espera -=1;
+      if (espera == 0) {
+	fprintf(log,"Llegada de gandola: %d minutos, 38000 litros\n",tiempo);
+	printf("Llegada de gandola: %d minutos, 38000 litros\n",tiempo);
+	inv += 38000;
+	vacio = false;
+      }
+    }
     /* Pasa el tiempo */
     tiempo += 1;
   }
   fclose(log);
+  limpiarLista(servidores);
   printf("El resumen de la sesion ha sido guardado en %s \n",nombreLog);
   return 0;
 }

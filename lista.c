@@ -66,7 +66,9 @@ typedef struct elemento elemento;
 typedef struct lista lista;
 
 struct elemento{
-  char *centro;
+  char *nombre;
+  char *dir;
+  int puerto;
   int tResp;
   elemento *sig;
 };
@@ -75,6 +77,18 @@ struct lista{
   int numE;
   elemento *prim;
 };
+
+
+
+/*
+  Funcion:
+  Entrada:
+  Salida:
+  Tarea:
+*/
+void mostrarElemento(elemento *e) {
+  printf("*** Elemento ****\nNombre:%s\nDireccion:%s\nPuerto:%d\nTiempoRespuesta:%d\n*****************\n\n",e->nombre,e->dir,e->puerto,e->tResp);
+}
 
 /*
   Funcion: msjError()
@@ -110,9 +124,11 @@ lista *iniciarLista(){
    que se le pasa como parametro. siendo el elemento la composicion de la info
    y el tiempo de respuesta 
 */
-void *agregarElemento(lista *l, char *info, int tResp){
+void *agregarElemento(lista *l, char *nombre, char *dir,  int puerto, int tResp){
   elemento *e = xmalloc(sizeof(elemento));
-  e->centro = info;
+  e->nombre = nombre;
+  e->dir = dir;
+  e->puerto = puerto;
   e->tResp = tResp;
   e->sig = NULL;
   
@@ -161,11 +177,11 @@ void mostrarLista(lista *l){
   } else {
     if (l->numE == 1) {
       printf("La lista tiene 1 elemento. Se muestran a continuacion\n");
-      printf("Elemento: %s(%d)\n",e->centro,e->tResp);
+      mostrarElemento(e);
     } else {
       printf("La lista tiene %d elementos. Se muestran a continuacion\n",l->numE);
       while (e!=NULL) {
-	printf("Elemento: %s(%d)\n",e->centro,e->tResp);
+	mostrarElemento(e);
 	e = e->sig;
       }
     }
@@ -196,16 +212,6 @@ elemento *obtenerElemento(lista *l, int pos){
     return e;
   }
 }
-
-/*
-  Funcion:
-  Entrada:
-  Salida:
-  Tarea:
-*/
-void mostrarElemento(elemento *e) {
-  printf("Elemento:%s:%d\n",e->centro,e->tResp);
-}
 /*
   Funcion: limpiarLista(lista *l)
   Entrada: 
@@ -232,11 +238,11 @@ void limpiarLista(lista *l) {
 int main(int argc, char **argv) {
   lista *l = iniciarLista();
   mostrarLista(l);
-  agregarElemento(l,"medio",3);
+  agregarElemento(l,"medio","maquina",3,5);
   mostrarLista(l);
-  agregarElemento(l,"chao",6);
+  agregarElemento(l,"chao","maquina",4,6);
   mostrarLista(l);
-  agregarElemento(l,"hola",1);
+  agregarElemento(l,"hola","maquina",3,1);
   mostrarLista(l);
   printf("Mostrar todos los elementos\n");
   int i = 0;

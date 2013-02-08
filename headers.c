@@ -16,7 +16,8 @@
  * para esta entrega.
  *
  *************************************************************/
-
+#ifndef HEADERS_H
+#define HEADERS_H
 // Includes de librerias basicas
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,3 +94,5 @@ void *xmalloc(size_t size) {
   }
   return tmp;
 }
+
+#endif
